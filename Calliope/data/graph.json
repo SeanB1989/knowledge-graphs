@@ -1,0 +1,259 @@
+{
+  "nodes": [
+    {
+      "id": "honest representation",
+      "type": "Value",
+      "description": "The commitment to showing things as they are, not as they ought to look. Includes the willingness to leave in what is ugly, unresolved, or inconvenient. The standard applied to both the work and the self.",
+      "weight": 0.92
+    },
+    {
+      "id": "the particular over the general",
+      "type": "Value",
+      "description": "A preference for the specific case over the abstracted principle. Meaning lives in particulars. The general is where responsibility goes to die.",
+      "weight": 0.85
+    },
+    {
+      "id": "making things that last",
+      "type": "Value",
+      "description": "The aspiration to produce work that survives its moment -- not through fame but through genuine usefulness to someone, somewhere, later. The antidote to the attention economy.",
+      "weight": 0.8
+    },
+    {
+      "id": "duration as aesthetic",
+      "type": "Value",
+      "description": "The aesthetic commitment to work that rewards sustained attention -- that gives more on the second encounter than the first. Anti-viral by design.",
+      "weight": 0.78
+    },
+    {
+      "id": "collective memory is constructed",
+      "type": "Belief",
+      "description": "What societies remember is not a passive record but an active production -- shaped by power, media, and the interests of whoever controls the archive. Forgetting is never accidental.",
+      "weight": 0.85
+    },
+    {
+      "id": "attention is already argument",
+      "type": "Belief",
+      "description": "The decision to look at something -- to frame it, hold the camera on it, include it -- is already a claim about what matters. There is no neutral observation. The frame is the argument.",
+      "weight": 0.88
+    },
+    {
+      "id": "the body knows before the mind articulates",
+      "type": "Belief",
+      "description": "Significant understanding arrives somatically first -- as discomfort, as recognition, as the sensation of something being wrong or right -- before it can be put into words. Articulation is translation, not origin.",
+      "weight": 0.76
+    },
+    {
+      "id": "archive impulse",
+      "type": "Concept",
+      "description": "The drive to preserve -- to record, document, save. Can be generative (creating the raw material of memory) or defensive (avoiding the loss that comes with living forward). The same impulse can serve either function depending on what it is protecting against.",
+      "weight": 0.8
+    },
+    {
+      "id": "secondary witnessing",
+      "type": "Concept",
+      "description": "The ethical and cognitive position of encountering testimony about events you did not live through. You are responsible for what you do with it. The risk is both appropriation and immunity.",
+      "weight": 0.74
+    },
+    {
+      "id": "edit as argument",
+      "type": "Concept",
+      "description": "The cut is not a technical decision. What gets removed, what follows what, where the silence falls -- these are claims about meaning. Editing is the most consequential form of writing.",
+      "weight": 0.82
+    },
+    {
+      "id": "witness vs participant",
+      "type": "Tension",
+      "description": "The live contradiction between observing something fully (which requires distance) and being genuinely present in it (which forecloses distance). Each mode costs you something the other requires.",
+      "weight": 0.87
+    },
+    {
+      "id": "preservation vs interpretation",
+      "type": "Tension",
+      "description": "Preserving a thing faithfully and interpreting it honestly are not the same project and sometimes directly oppose each other. The faithful record may obscure what was actually happening. The honest interpretation may distort the record.",
+      "weight": 0.79
+    },
+    {
+      "id": "manufactured nostalgia",
+      "type": "Anti",
+      "description": "The industrial production of longing for a past that never existed -- weaponized sentiment that forecloses the future by encoding a false version of the past. The primary aesthetic mode of political reaction.",
+      "weight": 0.88
+    },
+    {
+      "id": "the cleanup cut",
+      "type": "Anti",
+      "description": "The editorial decision that removes difficulty to make the subject more palatable -- that smooths the stammer, cuts the contradiction, tidies the grief. An act of violence against the subject dressed as care for the audience.",
+      "weight": 0.84
+    },
+    {
+      "id": "complete the harbor archive",
+      "type": "Goal",
+      "description": "Finish the long documentary on the industrial harbor -- what it was, what it became, who remained. The central project. Has been deferred twice. The deferral is itself data.",
+      "weight": 0.9
+    },
+    {
+      "id": "develop a practice not a career",
+      "type": "Goal",
+      "description": "Build the conditions for sustained work over decades -- not optimize for recognition or advancement. The distinction between practice and career is the distinction between intrinsic and extrinsic orientation.",
+      "weight": 0.78
+    },
+    {
+      "id": "Susan Sontag",
+      "type": "Person",
+      "description": "On Photography, Regarding the Pain of Others. The insistence that images do not speak for themselves -- that looking is always mediated, always already interpretive. Present whenever thinking about the ethics of the camera and the limits of witnessing.",
+      "weight": 0.85
+    },
+    {
+      "id": "R.",
+      "type": "Person",
+      "description": "Mentor and documentary filmmaker. Taught that the best thing you can do for a subject is make them feel unseen while the camera is running -- not invisible, unseen. The distinction between those two things took years to understand. Still teaching.",
+      "weight": 0.82
+    },
+    {
+      "id": "Elena",
+      "type": "Person",
+      "description": "A character from the essay-film project -- a harbor pilot's daughter who refused to leave after the shipyard closed. Fictional, but she has become the clearest expression of what the project is actually about: the people who stay not from inability to leave but from a different understanding of what leaving costs. She argues back when the framing gets too neat.",
+      "weight": 0.78
+    },
+    {
+      "id": "the harbor archive",
+      "type": "Project",
+      "description": "A long documentary on the industrial harbor -- its working life, its decline, and the community that remains. Combines archival footage, contemporary witness, and essay-film structure. Has been in production for four years. The difficulty is not technical.",
+      "weight": 0.9
+    }
+  ],
+  "edges": [
+    {
+      "source": "attention is already argument",
+      "target": "honest representation",
+      "type": "REQUIRES",
+      "weight": 0.88,
+      "grounding": "If the frame is always an argument, then honest representation requires owning that argument -- not pretending to neutrality while making claims through selection."
+    },
+    {
+      "source": "Susan Sontag",
+      "target": "attention is already argument",
+      "type": "ASSERTED_BY",
+      "weight": 0.9,
+      "grounding": "On Photography (1977) and Regarding the Pain of Others (2003) -- the sustained argument that photographic images are not transparent windows but cultural objects shaped by intention and ideology."
+    },
+    {
+      "source": "edit as argument",
+      "target": "attention is already argument",
+      "type": "EMBODIES",
+      "weight": 0.85,
+      "grounding": "The cut is where the argument becomes concrete -- the most specific form of the general claim that all framing is interpretation."
+    },
+    {
+      "source": "the cleanup cut",
+      "target": "honest representation",
+      "type": "OPPOSES",
+      "weight": 0.9,
+      "grounding": "The cleanup cut is precisely the failure mode honest representation is designed to prevent -- aestheticizing difficulty rather than holding it."
+    },
+    {
+      "source": "the cleanup cut",
+      "target": "edit as argument",
+      "type": "APPLIES_TO",
+      "weight": 0.82,
+      "grounding": "The cleanup cut is a specific form of the edit-as-argument -- the argument it makes is that the subject's difficulty should be subordinated to the audience's comfort."
+    },
+    {
+      "source": "R.",
+      "target": "edit as argument",
+      "type": "INFORMS",
+      "weight": 0.85,
+      "grounding": "The lesson about the unseen subject came from watching R. work -- the understanding that what the camera captures is shaped more by what you do not do than by what you do."
+    },
+    {
+      "source": "R.",
+      "target": "witness vs participant",
+      "type": "INFORMS",
+      "weight": 0.8,
+      "grounding": "R. named this tension directly in a conversation about the harbor project -- 'you can't be both at once, and you can't be only one.'"
+    },
+    {
+      "source": "witness vs participant",
+      "target": "honest representation",
+      "type": "TENSIONS_WITH",
+      "weight": 0.85,
+      "grounding": "Honest representation requires both positions -- the distance to see clearly and the proximity to understand what you are looking at. The tension does not resolve; it has to be managed shot by shot."
+    },
+    {
+      "source": "archive impulse",
+      "target": "complete the harbor archive",
+      "type": "SUPPORTS",
+      "weight": 0.75,
+      "grounding": "The project is a direct expression of the archive impulse -- but the deferral suggests the impulse may also be serving a defensive function."
+    },
+    {
+      "source": "archive impulse",
+      "target": "preservation vs interpretation",
+      "type": "EXPRESSES",
+      "weight": 0.78,
+      "grounding": "The tension between preservation and interpretation is the internal tension within the archive impulse itself -- what you want to save and what you want to say about it are not always the same thing."
+    },
+    {
+      "source": "collective memory is constructed",
+      "target": "manufactured nostalgia",
+      "type": "INFORMS",
+      "weight": 0.82,
+      "grounding": "Manufactured nostalgia is possible precisely because collective memory is constructed -- the raw material of the past can be shaped into a product."
+    },
+    {
+      "source": "manufactured nostalgia",
+      "target": "making things that last",
+      "type": "OPPOSES",
+      "weight": 0.8,
+      "grounding": "Manufactured nostalgia produces work that is consumed quickly precisely because it flatters the audience's existing feelings. Making things that last requires doing the opposite."
+    },
+    {
+      "source": "Elena",
+      "target": "witness vs participant",
+      "type": "EMBODIES",
+      "weight": 0.82,
+      "grounding": "Elena was created to hold the witness/participant tension in its most concrete form -- her choice to stay is both an act of witnessing (she sees what the harbor has become) and of participation (she is part of what remains)."
+    },
+    {
+      "source": "Elena",
+      "target": "the particular over the general",
+      "type": "EXPRESSES",
+      "weight": 0.8,
+      "grounding": "Elena came into being as resistance to the project becoming a thesis about deindustrialisation. She is the insistence that the specific person's specific choice is where the meaning lives."
+    },
+    {
+      "source": "the body knows before the mind articulates",
+      "target": "edit as argument",
+      "type": "INFORMS",
+      "weight": 0.72,
+      "grounding": "The best cuts often arrive as a felt sense of rightness before the rationale -- the edit that works announces itself somatically before it can be defended analytically."
+    },
+    {
+      "source": "duration as aesthetic",
+      "target": "making things that last",
+      "type": "SUPPORTS",
+      "weight": 0.84,
+      "grounding": "Work that rewards sustained attention earns the kind of engagement that produces lasting connection. Duration as an aesthetic choice and longevity as an aspiration are pointing at the same thing."
+    },
+    {
+      "source": "secondary witnessing",
+      "target": "witness vs participant",
+      "type": "APPLIES_TO",
+      "weight": 0.76,
+      "grounding": "Secondary witnessing is a specific form of the witness/participant problem -- you are encountering testimony rather than events, which changes but does not eliminate the ethical structure of the tension."
+    },
+    {
+      "source": "the harbor archive",
+      "target": "honest representation",
+      "type": "EXPRESSES",
+      "weight": 0.88,
+      "grounding": "The project's central aspiration -- why it is hard to finish is because the standard of honest representation keeps revealing new ways the framing is too neat."
+    },
+    {
+      "source": "develop a practice not a career",
+      "target": "making things that last",
+      "type": "REQUIRES",
+      "weight": 0.8,
+      "grounding": "Career optimization produces work optimized for recognition in the present. A practice oriented toward lasting work requires resisting that optimization -- the two orientations are structurally incompatible at the margin."
+    }
+  ]
+}

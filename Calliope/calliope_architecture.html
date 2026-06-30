@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calliope — Architecture</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f0f13;
+    color: #e0ddd6;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    min-height: 100vh;
+    padding: 40px 24px 80px;
+  }
+  h1 {
+    text-align: center;
+    font-family: Georgia, serif;
+    font-size: 2rem;
+    font-weight: normal;
+    letter-spacing: 0.15em;
+    color: #c9b99a;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #666;
+    margin-bottom: 48px;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Layout ── */
+  .diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── Boxes ── */
+  .box {
+    border-radius: 10px;
+    padding: 16px 24px;
+    text-align: center;
+    position: relative;
+    width: 340px;
+  }
+  .box .label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.55;
+    margin-bottom: 4px;
+  }
+  .box .name {
+    font-size: 1.05rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+  }
+  .box .detail {
+    font-size: 0.72rem;
+    margin-top: 5px;
+    opacity: 0.7;
+    line-height: 1.5;
+  }
+
+  .box-terminal  { background: #1a1a22; border: 1px solid #3a3a4a; }
+  .box-main      { background: #162030; border: 1px solid #2a4a6a; }
+  .box-openai    { background: #1a2020; border: 1px solid #2a5a4a; }
+  .box-lmstudio  { background: #1e1a28; border: 1px solid #4a3a6a; }
+  .box-gemma     { background: #201820; border: 1px solid #6a3a5a; }
+  .box-tools     { background: #201a14; border: 1px solid #6a4a2a; }
+  .box-graph     { background: #1a2014; border: 1px solid #4a6a2a; }
+  .box-json      { background: #141a14; border: 1px solid #2a4a2a; }
+
+  .name-terminal  { color: #8888cc; }
+  .name-main      { color: #6abaff; }
+  .name-openai    { color: #4ec9b0; }
+  .name-lmstudio  { color: #b39ddb; }
+  .name-gemma     { color: #f48fb1; }
+  .name-tools     { color: #ffb86c; }
+  .name-graph     { color: #a5d6a7; }
+  .name-json      { color: #80cbc4; }
+
+  /* ── Arrows ── */
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin: 2px 0;
+  }
+  .arrow-line {
+    width: 2px;
+    height: 22px;
+    background: linear-gradient(to bottom, #444, #666);
+  }
+  .arrow-head {
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 9px solid #666;
+  }
+  .arrow-label {
+    font-size: 0.62rem;
+    color: #888;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .arrow-bidirectional .arrow-line {
+    background: linear-gradient(to bottom, #555, #555);
+  }
+  .arrow-bidirectional .arrow-top {
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 9px solid #666;
+    margin-bottom: 2px;
+  }
+
+  /* ── Side branch ── */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+    width: 100%;
+    max-width: 860px;
+    justify-content: center;
+  }
+  .side-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .side-arrow-h {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .side-line-h {
+    height: 2px;
+    width: 40px;
+    background: #555;
+  }
+  .side-arrow-head-r {
+    width: 0; height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 9px solid #666;
+  }
+  .side-arrow-v {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: 40px;
+  }
+  .side-line-v {
+    width: 2px;
+    height: 24px;
+    background: linear-gradient(to bottom, #555, #666);
+    margin-left: 14px;
+  }
+  .side-head-down {
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 9px solid #666;
+    margin-left: 8px;
+  }
+  .side-label {
+    font-size: 0.6rem;
+    color: #666;
+    letter-spacing: 0.06em;
+    margin-left: 0;
+    margin-top: 2px;
+  }
+
+  /* ── Annotation cards ── */
+  .annotations {
+    max-width: 860px;
+    margin: 56px auto 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .annotation {
+    background: #141418;
+    border: 1px solid #2a2a36;
+    border-radius: 8px;
+    padding: 16px 20px;
+  }
+  .annotation h3 {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 8px;
+  }
+  .annotation p {
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: #aaa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .annotation .highlight {
+    color: #c9b99a;
+    font-family: 'SF Mono', monospace;
+    font-size: 0.72rem;
+  }
+
+  /* ── Loop indicator ── */
+  .loop-badge {
+    display: inline-block;
+    background: #1a2030;
+    border: 1px solid #2a4060;
+    border-radius: 20px;
+    padding: 5px 16px;
+    font-size: 0.65rem;
+    color: #6abaff;
+    letter-spacing: 0.1em;
+    margin-top: 8px;
+  }
+
+  .section-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #555;
+    text-align: center;
+    margin: 14px 0 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>C A L L I O P E</h1>
+<div class="subtitle">Architecture · All Moving Parts</div>
+
+<div class="diagram">
+
+  <!-- Terminal -->
+  <div class="box box-terminal">
+    <div class="label">Entry Point</div>
+    <div class="name name-terminal">Terminal</div>
+    <div class="detail">python3 main.py<br>You type a message → hits the REPL</div>
+  </div>
+
+  <div class="arrow">
+    <div class="arrow-line"></div>
+    <div class="arrow-head"></div>
+    <div class="arrow-label">user_input string</div>
+  </div>
+
+  <!-- main.py -->
+  <div class="row">
+    <div class="box box-main">
+      <div class="label">Orchestrator</div>
+      <div class="name name-main">main.py</div>
+      <div class="detail">
+        run_tool_loop()<br>
+        Manages messages[ ] array<br>
+        ReAct loop · up to 8 iterations
+      </div>
+      <div class="loop-badge">↻ ReAct Loop</div>
+    </div>
+
+    <!-- Side branch: tool execution -->
+    <div class="side-branch" style="right: 30px;">
+      <div class="side-arrow-h">
+        <div class="side-line-h"></div>
+        <div class="side-arrow-head-r"></div>
+      </div>
+      <div style="margin-left: 48px; margin-top: 4px;">
+        <div class="side-label" style="margin-left:0;">tool_calls detected</div>
+        <div class="side-line-v"></div>
+        <div class="side-head-down"></div>
+        <div style="margin-top:6px;">
+          <div class="box box-tools" style="width:220px;">
+            <div class="label">Tool Layer</div>
+            <div class="name name-tools">tools.py</div>
+            <div class="detail">execute_tool()<br>Routes to graph methods</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;margin:2px 0;">
+            <div class="side-line-v" style="height:18px;margin-left:0;"></div>
+            <div class="side-head-down" style="margin-left:-6px;"></div>
+          </div>
+          <div class="box box-graph" style="width:220px;">
+            <div class="label">Graph Engine</div>
+            <div class="name name-graph">graph.py</div>
+            <div class="detail">NetworkX DiGraph<br>find_values · find_tensions<br>assert_node · assert_edge</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;margin:2px 0;">
+            <div class="side-line-v" style="height:18px;margin-left:0;"></div>
+            <div class="side-head-down" style="margin-left:-6px;"></div>
+          </div>
+          <div class="box box-json" style="width:220px;">
+            <div class="label">Persistence</div>
+            <div class="name name-json">data/graph.json</div>
+            <div class="detail">47 nodes · 95 edges<br>Values, Tensions, Goals…<br>weight + grounding on each</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">
+    <div class="arrow-line"></div>
+    <div class="arrow-head"></div>
+    <div class="arrow-label">messages[ ] with tool schemas</div>
+  </div>
+
+  <!-- OpenAI Library -->
+  <div class="box box-openai">
+    <div class="label">HTTP Client (Python Library)</div>
+    <div class="name name-openai">openai</div>
+    <div class="detail">
+      pip install openai<br>
+      Formats JSON · sends HTTP POST<br>
+      <em style="opacity:0.6">Not OpenAI the company — just their open API format</em>
+    </div>
+  </div>
+
+  <div class="arrow">
+    <div class="arrow-line"></div>
+    <div class="arrow-head"></div>
+    <div class="arrow-label">HTTP POST → localhost:1234/v1/chat/completions</div>
+  </div>
+
+  <!-- LM Studio -->
+  <div class="box box-lmstudio">
+    <div class="label">Local Model Server</div>
+    <div class="name name-lmstudio">LM Studio</div>
+    <div class="detail">
+      Runs at localhost:1234<br>
+      Implements the OpenAI API spec<br>
+      Loads &amp; serves local models
+    </div>
+  </div>
+
+  <div class="arrow">
+    <div class="arrow-line"></div>
+    <div class="arrow-head"></div>
+    <div class="arrow-label">inference request</div>
+  </div>
+
+  <!-- Gemma -->
+  <div class="box box-gemma">
+    <div class="label">Language Model (runs 100% locally)</div>
+    <div class="name name-gemma">Gemma 4 12B QAT</div>
+    <div class="detail">
+      google/gemma-4-12b-qat<br>
+      12 billion parameters · native tool calling<br>
+      M4 MacBook Air 24GB unified memory
+    </div>
+  </div>
+
+  <div class="section-label">↑ response flows back up the same chain ↑</div>
+
+</div><!-- /diagram -->
+
+<!-- Annotation cards -->
+<div class="annotations">
+
+  <div class="annotation">
+    <h3>Why openai library with Gemma?</h3>
+    <p>
+      The <span class="highlight">OpenAI API</span> is a <em>format specification</em>, not a product.
+      It defines how to structure chat requests and responses as JSON over HTTP.
+      LM Studio implements this same spec for any local model.
+      The <span class="highlight">openai</span> Python library is just an HTTP client that speaks this format —
+      it works with any server that follows the spec, including LM Studio running Gemma.
+      No data ever leaves your computer.
+    </p>
+  </div>
+
+  <div class="annotation">
+    <h3>What is the ReAct loop?</h3>
+    <p>
+      <strong>Re</strong>ason + <strong>Act</strong>.
+      main.py sends the conversation to Gemma.
+      If Gemma decides to call a tool, it returns a <span class="highlight">tool_calls</span> object (not text).
+      main.py executes those tools against the graph, appends the results as
+      <span class="highlight">role: "tool"</span> messages, and calls Gemma again.
+      This repeats up to 8 times until Gemma responds with no tool calls — that's the final answer.
+    </p>
+  </div>
+
+  <div class="annotation">
+    <h3>What is native tool calling?</h3>
+    <p>
+      Gemma 4 understands tool schemas at the model level.
+      We pass <span class="highlight">tools: [...]</span> — JSON schemas describing each graph function —
+      in the API request. The model decides when to call them and returns structured
+      <span class="highlight">tool_calls</span> data. No XML parsing, no regex, no hacks.
+      The model natively understands it has tools and uses them.
+    </p>
+  </div>
+
+  <div class="annotation">
+    <h3>What is the graph?</h3>
+    <p>
+      A directed graph stored in <span class="highlight">graph.json</span>, loaded into NetworkX in memory.
+      Nodes are Sean's values, goals, aesthetic commitments, tensions, influences, and projects —
+      each with a <span class="highlight">weight</span> (0.0–1.0, epistemic certainty) and description.
+      Edges are relationships (SUPPORTS, TENSIONS_WITH, INFORMS…) with a
+      <span class="highlight">grounding</span> — the justification for why that connection holds.
+      Calliope reads and writes this graph during every conversation.
+    </p>
+  </div>
+
+  <div class="annotation">
+    <h3>What does Calliope actually do?</h3>
+    <p>
+      Before responding, she is required to call <span class="highlight">find_values</span> and
+      <span class="highlight">find_tensions</span>. She then follows relevant threads with
+      get_node, get_neighbors, search. She identifies real tensions between
+      what you're asking and what your graph commits you to — then helps resolve them.
+      If the conversation reveals something true not yet in the graph, she asserts it.
+    </p>
+  </div>
+
+  <div class="annotation">
+    <h3>QAT — what does that mean?</h3>
+    <p>
+      Quantization-Aware Training. The model is compressed to use less memory
+      (roughly 8–10GB instead of ~25GB for full precision), but unlike naive post-hoc
+      quantization, QAT bakes the compression into training — so quality stays close
+      to the full model. This is why a 12B model runs comfortably on a 24GB M4 MacBook Air.
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>
