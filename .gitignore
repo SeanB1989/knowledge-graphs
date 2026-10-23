@@ -29,3 +29,18 @@ ENV/
 
 # If you populate your own graph, you may want to gitignore it:
 # data/graph.json
+
+
+# Calliope local materials and generated state
+Calliope/corpus/
+Calliope/corpus_text/
+Calliope/corpus_sean/
+Calliope/corpus_dialogue/
+Calliope/notes_export/
+Calliope/data/*
+!Calliope/data/graph.json
+Calliope/weights_todo.yaml
+
+# Local snapshots
+*.pre_*
+_backup*/

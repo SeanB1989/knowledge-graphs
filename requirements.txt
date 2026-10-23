@@ -1,0 +1,6 @@
+openai
+networkx
+chromadb
+pdfplumber
+# Optional cross-encoder reranker; corpus retrieval falls back if unavailable.
+sentence-transformers

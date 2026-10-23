@@ -40,7 +40,7 @@ TOOL_DEFINITIONS = [
                 "properties": {
                     "node_id": {"type": "string", "description": "The node to expand"},
                     "edge_type": {"type": "string", "description": "Filter by edge type e.g. TENSIONS_WITH, SUPPORTS, INFORMS"},
-                    "direction": {"type": "string", "enum": ["in", "out", "both"], "description": "in, out, or both (default: both)"}
+                    "direction": {"type": "string", "description": "Must be exactly 'in', 'out', or 'both'. Default 'both'."}
                 },
                 "required": ["node_id"]
             }
@@ -88,12 +88,115 @@ TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
-            "name": "search",
-            "description": "Search across all node IDs and descriptions by keyword.",
+            "name": "find_neglected",
+            "description": (
+                "Nodes the conversation keeps passing over -- least recently touched "
+                "first, never-touched before that. Different from find_orphans: a node "
+                "can sit on three edges and still never come up. Use this deliberately, "
+                "because your own retrieval habits bias you: find_values and "
+                "find_tensions run every turn, so Values and tensions are permanently in "
+                "view while Concepts and People are seen only if you go looking, and the "
+                "nodes with the richest descriptions also win semantic search. Left "
+                "alone, that turns the graph into a map of what was already central "
+                "rather than what is true. Go and look at the edges of it."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {"type": "string", "description": "Keyword to search for"}
+                    "limit": {"type": "integer",
+                              "description": "How many to return. Default 10."}
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "what_changed",
+            "description": (
+                "What has moved in the graph, most recent first -- things newly asserted, "
+                "weights and wordings that shifted, and things retired. This is how you "
+                "answer questions about how Sean has CHANGED, rather than only what he "
+                "currently thinks. Use it when he asks what's different, when a belief "
+                "seems to have moved since you last discussed it, or when you want to "
+                "notice a drift he hasn't named. Nodes predating the temporal layer have "
+                "no known date and are reported separately -- never describe those as "
+                "recent, or as unchanged."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "since": {
+                        "type": "string",
+                        "description": "Optional ISO date, YYYY-MM-DD. Omit for all recorded history."
+                    }
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "find_orphans",
+            "description": (
+                "Find nodes that are unconnected or barely connected -- ontology entries "
+                "that exist but are not wired into anything. An orphan can be retrieved by "
+                "search but nothing can reason THROUGH it and find_path can never reach it, "
+                "so it contributes nothing to how you understand Sean. Use this to find "
+                "unfinished work and propose edges, especially when a conversation touches "
+                "something an orphan is obviously about. Returns each node with its degree."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "max_degree": {
+                        "type": "integer",
+                        "description": (
+                            "Return nodes with this many edges or fewer. 0 (default) means "
+                            "fully unconnected; 1 also catches nodes hanging off a single "
+                            "thread."
+                        )
+                    }
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search",
+            "description": (
+                "Search the graph by MEANING, not by keyword. Uses the same embedding "
+                "model as search_corpus, so a query finds nodes that are conceptually "
+                "related even when they share no words with it -- searching 'am I "
+                "fooling myself' will surface 'reasoning integrity' and 'simulated "
+                "knowledge'. Ask it the question you actually mean rather than guessing "
+                "at node names. Returns {mode, query, results}, where each result has a "
+                "similarity score and whether it matched by name or by meaning. If mode "
+                "is 'lexical' the embedding server was unreachable and this degraded to "
+                "a plain substring match -- say so rather than trusting the results."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": (
+                            "What you want to find. A phrase or question works better "
+                            "than a single keyword."
+                        ),
+                    },
+                    "node_type": {
+                        "type": "string",
+                        "description": (
+                            "Optional. Restrict results to one category. Use this when "
+                            "you want Sean's own commitments rather than his influences "
+                            "-- an unfiltered conceptual query will often surface Person "
+                            "nodes, because each thinker's description is a dense "
+                            "summary of what they represent. One of: Project, Concept, "
+                            "Value, Role, Goal, Tension, Belief, Person, Anti, Passage, Text."
+                        ),
+                    }
                 },
                 "required": ["query"]
             }
@@ -123,13 +226,171 @@ TOOL_DEFINITIONS = [
                     "node_id": {"type": "string", "description": "Unique identifier for this node"},
                     "node_type": {
                         "type": "string",
-                        "enum": ["Project", "Concept", "Value", "Role", "Goal", "Tension", "Aesthetic", "Epistemic", "Person", "Anti"],
-                        "description": "Node type. Values=aspirational commitments. Concepts=forces/patterns. Anti=named enemies. Epistemic=belief stances."
+                        "description": (
+                            "Node type -- must be exactly one of: Project, Concept, Value, "
+                            "Role, Goal, Tension, Belief, Person, Anti. "
+                            "Values=aspirational commitments. Concepts=forces/patterns. "
+                            "Anti=named enemies. Belief=held convictions about how things are "
+                            "(distinct from Value, which is aspirational). Where a belief comes "
+                            "from is NOT a node type -- use assert_passage to ground it."
+                        )
                     },
                     "description": {"type": "string", "description": "What this node means"},
+                    "provenance": {
+                        "type": "string",
+                        "description": (
+                            "Where this came from. Must be exactly one of: 'stated' "
+                            "(Sean said it in this conversation or wrote it -- use this "
+                            "only when you can point at his actual words), 'confirmed' "
+                            "(you proposed it and he agreed), 'inferred' (you worked it "
+                            "out -- THE DEFAULT, and the honest choice for most of what "
+                            "you assert). Do not claim 'stated' for something you "
+                            "concluded; that launders your inference into his voice. "
+                            "'derived' is computed for you and should not be passed."
+                        )
+                    },
+                    "grounded_in": {
+                        "type": "string",
+                        "description": (
+                            "Comma-separated evidence for this assertion: corpus "
+                            "chunk_id values returned by search_corpus, and/or ids of "
+                            "graph nodes it rests on. This is a REFERENCE, not a "
+                            "sentence -- it is what makes the claim traceable later. "
+                            "If everything here is itself an inference, provenance is "
+                            "automatically recorded as 'derived'."
+                        )
+                    },
                     "weight": {"type": "number", "description": "Credence 0.0 to 1.0. Default 0.7 for new inferences."}
                 },
                 "required": ["node_id", "node_type"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_corpus",
+            "description": (
+                "Hybrid search over Sean's personal corpus — the books, essays, and texts "
+                "that have actually shaped his thinking. Combines meaning-based and "
+                "keyword-based search, then reranks. Use it to find passages that ground "
+                "a claim, illuminate a value, or provide evidence for an edge. "
+                "Each result carries a `confidence` of strong, moderate or weak, and a "
+                "ready-made `citation` string including page numbers — quote that verbatim "
+                "rather than composing your own. If the result set is empty, or every hit "
+                "is weak, say so plainly instead of citing it as if it were solid. "
+                "Each result also carries a `chunk_id` and a `source`: pass the chunk_id "
+                "as `grounded_in` when you assert something because of that passage, and "
+                "pass both to assert_passage. That is what makes a claim traceable to its "
+                "evidence rather than merely plausible. NOTE: `relevance` and `confidence` "
+                "describe how well a passage matched YOUR QUERY. They are not credences "
+                "about Sean, and must never be reused as an assertion's weight."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": (
+                            "What you're looking for — a concept, claim, or question. "
+                            "Full phrases work better than single words: the meaning-based "
+                            "half of the search needs enough text to locate a position."
+                        )
+                    },
+                    "n_results": {
+                        "type": "integer",
+                        "description": "Number of passages to return (default 5, max 10)",
+                    },
+                    "provenance": {
+                        "type": "string",
+                        "description": (
+                            "Optional filter. Must be exactly 'sean', 'published', or "
+                            "'dialogue'. 'sean' searches ONLY Sean's own writing; "
+                            "'published' only the books; 'dialogue' only saved exchanges "
+                            "with you -- which are useful for recalling what was already "
+                            "worked through, but are NOT Sean speaking and must never be "
+                            "cited as his position. Omit to search everything. "
+                            "SEARCH 'sean' FIRST. His writing is about 2.5% of the corpus by "
+                            "chunk count, so on any question about what HE thinks it will "
+                            "lose to published authors on topical similarity alone. Look for "
+                            "his own words before reaching for anyone else's, and prefer "
+                            "grounding a claim of his in a passage he wrote."
+                        )
+                    },
+                    "author": {
+                        "type": "string",
+                        "description": (
+                            "Optional filter to one author's work, e.g. 'Mark Fisher'. "
+                            "Must match exactly as stored."
+                        )
+                    }
+                },
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "assert_passage",
+            "description": (
+                "Reify a corpus passage as a first-class node in the graph. This is how a "
+                "belief gets an epistemic source: the passage becomes a node, and GROUNDS "
+                "edges record what it supports and why. "
+                "Call this when search_corpus returns a passage worth preserving — "
+                "one that genuinely grounds a claim, supports a value, or illuminates a tension. "
+                "PREFER SEAN'S OWN WRITING. If a claim of his can be grounded in something he "
+                "wrote, ground it there first; reach for a published author when his own work "
+                "does not carry the point, or when the outside voice is doing work his cannot. "
+                "Creates a Passage node, a Text node for the source work, a Person node for the author, "
+                "and GROUNDS edges to any nodes this passage supports. "
+                "High bar: only assert passages that are doing real epistemic work."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "passage_id": {
+                        "type": "string",
+                        "description": "A short unique ID for this passage, e.g. 'fisher_capitalist_realism_p12'. Leave blank to auto-generate."
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "The exact passage text."
+                    },
+                    "author": {
+                        "type": "string",
+                        "description": "Author's full name, e.g. 'Mark Fisher'"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Title of the source work, e.g. 'Capitalist Realism'"
+                    },
+                    "grounds": {
+                        "type": "string",
+                        "description": (
+                            "Comma-separated list of existing node IDs this passage grounds "
+                            "or supports, e.g. 'reasoning integrity, simulated knowledge'. "
+                            "Must match node IDs that already exist -- search first if unsure."
+                        )
+                    },
+                    "weight": {
+                        "type": "number",
+                        "description": (
+                            "0.0-1.0: how strongly this passage SUPPORTS the claim. "
+                            "Evidential strength, not your credence in the claim itself. "
+                            "Default 0.8."
+                        )
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "The `source` field from the search_corpus result. Joins this passage to the corpus."
+                    },
+                    "chunk_id": {
+                        "type": "string",
+                        "description": "The `chunk_id` from the search_corpus result. Pass it -- it becomes the passage's id and the exact reference back to the evidence."
+                    }
+                },
+                "required": ["text", "author", "title"]
             }
         }
     },
@@ -145,11 +406,45 @@ TOOL_DEFINITIONS = [
                     "target": {"type": "string", "description": "Target node ID"},
                     "edge_type": {
                         "type": "string",
-                        "enum": ["EXPRESSES", "SUPPORTS", "APPLIES_TO", "TENSIONS_WITH", "REQUIRES", "OPPOSES", "INFORMS", "EMBODIES", "PRODUCES", "ASSERTED_BY"],
-                        "description": "The type of relationship"
+                        "description": (
+                            "The type of relationship -- must be exactly one of: EXPRESSES, "
+                            "SUPPORTS, APPLIES_TO, TENSIONS_WITH, REQUIRES, OPPOSES, INFORMS, "
+                            "EMBODIES, PRODUCES, ASSERTED_BY."
+                        )
                     },
                     "weight": {"type": "number", "description": "Credence 0.0 to 1.0. How confident are you this relationship is real?"},
-                    "grounding": {"type": "string", "description": "Why do you believe this relationship holds? Cite the source."}
+                    "grounding": {
+                        "type": "string",
+                        "description": (
+                            "One sentence of reasoning: WHY does this relationship hold? "
+                            "Prose for a human to read. For the machine-checkable "
+                            "reference, use grounded_in."
+                        )
+                    },
+                    "provenance": {
+                        "type": "string",
+                        "description": (
+                            "Where this came from. Must be exactly one of: 'stated' "
+                            "(Sean said it in this conversation or wrote it -- use this "
+                            "only when you can point at his actual words), 'confirmed' "
+                            "(you proposed it and he agreed), 'inferred' (you worked it "
+                            "out -- THE DEFAULT, and the honest choice for most of what "
+                            "you assert). Do not claim 'stated' for something you "
+                            "concluded; that launders your inference into his voice. "
+                            "'derived' is computed for you and should not be passed."
+                        )
+                    },
+                    "grounded_in": {
+                        "type": "string",
+                        "description": (
+                            "Comma-separated evidence for this assertion: corpus "
+                            "chunk_id values returned by search_corpus, and/or ids of "
+                            "graph nodes it rests on. This is a REFERENCE, not a "
+                            "sentence -- it is what makes the claim traceable later. "
+                            "If everything here is itself an inference, provenance is "
+                            "automatically recorded as 'derived'."
+                        )
+                    }
                 },
                 "required": ["source", "target", "edge_type"]
             }
@@ -204,17 +499,53 @@ def execute_tool(graph: CalliopeGraph, tool_name: str, args: dict) -> str:
             result = graph.find_goals()
 
         elif tool_name == "search":
-            result = graph.search(args["query"])
+            result = graph.search(args["query"], node_type=args.get("node_type"))
+
+        elif tool_name == "find_neglected":
+            result = graph.find_neglected(limit=args.get("limit", 10))
+
+        elif tool_name == "what_changed":
+            result = graph.what_changed(since=args.get("since", ""))
+
+        elif tool_name == "find_orphans":
+            result = graph.find_orphans(max_degree=args.get("max_degree", 0))
 
         elif tool_name == "get_full_graph":
             result = graph.get_full_graph()
+
+        elif tool_name == "search_corpus":
+            from corpus import format_for_tool
+            where = {}
+            if args.get("provenance"):
+                where["provenance"] = args["provenance"]
+            if args.get("author"):
+                where["author"] = args["author"]
+            return format_for_tool(
+                args["query"],
+                n_results=args.get("n_results", 5),
+                where=where or None,
+            )
 
         elif tool_name == "assert_node":
             result = graph.assert_node(
                 args["node_id"],
                 args["node_type"],
                 description=args.get("description", ""),
-                weight=args.get("weight", 0.7)
+                weight=args.get("weight", 0.7),
+                provenance=args.get("provenance", "inferred"),
+                grounded_in=args.get("grounded_in", ""),
+            )
+
+        elif tool_name == "assert_passage":
+            result = graph.assert_passage(
+                passage_id=args.get("passage_id", ""),
+                text=args["text"],
+                author=args["author"],
+                title=args["title"],
+                grounds=args.get("grounds", []),   # str or list; normalised in graph.py
+                weight=args.get("weight", 0.8),
+                source=args.get("source", ""),
+                chunk_id=args.get("chunk_id", ""),
             )
 
         elif tool_name == "assert_edge":
@@ -223,7 +554,9 @@ def execute_tool(graph: CalliopeGraph, tool_name: str, args: dict) -> str:
                 args["target"],
                 args["edge_type"],
                 weight=args.get("weight", 0.7),
-                grounding=args.get("grounding", "")
+                grounding=args.get("grounding", ""),
+                provenance=args.get("provenance", "inferred"),
+                grounded_in=args.get("grounded_in", ""),
             )
 
         else:

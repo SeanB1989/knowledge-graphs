@@ -1,11 +1,10 @@
-[README.md](https://github.com/user-attachments/files/29525429/README.md)
 # Calliope
 
 **A personal ontology engine. A different kind of AI companion.**
 
 Calliope is a local AI that knows what you care about — your values, your goals, the tensions you live inside, the thinkers who shaped you. Before it says anything, it reads the graph. It notices when you're drifting. It helps you figure out what to do about that.
 
-It runs entirely on your machine, on an open-weights model via [LM Studio](https://lmstudio.ai/). No cloud. No subscriptions. No data leaving your computer.
+It runs entirely on your machine, on an open-weights model via [LM Studio](https://lmstudio.ai/). Inference, graph storage, and retrieval run locally. Models and Python packages must be downloaded during setup; the optional cross-encoder reranker may download its weights on first use.
 
 ---
 
@@ -45,7 +44,7 @@ Calliope runs locally against [LM Studio](https://lmstudio.ai/) via the OpenAI-c
 
 ### The node taxonomy
 
-Calliope uses **8 node types**:
+Calliope uses a small core taxonomy, with **11 accepted node types** in the current implementation:
 
 | Type | What it encodes |
 |---|---|
@@ -57,14 +56,17 @@ Calliope uses **8 node types**:
 | `Anti` | What you are against as a matter of principle. Named antagonists to your values — the things defined as wrong that are constitutive of what you stand for. |
 | `Person` | Any individual with a significant constitutive relationship to your worldview: intellectual influences (thinkers whose ideas shape yours), formative relationships (parents, teachers, partners, mentors), and created characters (fictional persons you've made who now think alongside you). |
 | `Project` | Actual work being made. |
+| `Role` | A role or position within the personal ontology. |
+| `Passage` | A cited corpus passage, linked to its source and the claims it grounds. |
+| `Text` | A source work, linked to its author. |
 
-This is a deliberately **small taxonomy**. Almost any object — a fear, a philosophy, a habit, a relationship — can be encoded within it, but it must be classified into one of these eight categories. That constraint is doing work.
+This is a deliberately **small taxonomy**. Almost any object — a fear, a philosophy, a habit, a relationship — can be encoded within it, but it must be classified into one of these categories. That constraint is doing work.
 
 `Belief` absorbs what other systems call *epistemic* nodes — stances toward knowing are beliefs, second-order ones. `Value` absorbs aesthetic commitments — aesthetic preferences function as values in the graph: they carry weight, guide decisions, and can tension against other things. `Concept` absorbs self-positioning models — how you understand your own role in your work and world is part of the conceptual vocabulary you think with. The consolidation isn't loss; it's clarity about what these things actually are.
 
 ### The edge vocabulary
 
-The graph has **10 edge types**:
+The graph has **13 accepted edge types**:
 
 | Edge | What it expresses |
 |---|---|
@@ -78,6 +80,9 @@ The graph has **10 edge types**:
 | `PRODUCES` | One node generates another as output |
 | `APPLIES_TO` | One node is relevant to or operates within the domain of another |
 | `ASSERTED_BY` | A claim traced to a source — person, text, or experience |
+| `GROUNDS` | A passage supports a graph claim |
+| `SOURCED_FROM` | A passage comes from a source text |
+| `AUTHORED_BY` | A text was authored by a person |
 
 ### Why this design?
 
@@ -113,64 +118,119 @@ The repo ships with an **example graph** featuring a fictional interlocutor. Rep
 
 ---
 
-## Next steps: corpus, vectors, and grounded edges
+## Current implementation
 
-The current graph is an assertion engine: Calliope asserts new nodes and edges based on reasoning, with weights and groundings supplied as natural language. This works, but it has a limit. The grounding is still Calliope's inference — it has no access to primary sources.
+Calliope now combines a mutable knowledge graph with a searchable reading and writing corpus:
 
-The next significant development is a **grounded epistemological layer**:
+- **Hybrid retrieval:** Nomic embeddings through LM Studio plus a BM25 lexical index, reciprocal rank fusion, and an optional cross-encoder reranker. Relevance thresholds can be calibrated against the local corpus; search can return no relevant passages.
+- **Source diversity:** a per-source result cap limits domination by heavily represented books. Source metadata distinguishes the owner's writing from published texts and saved model dialogue, with a preference for the owner's writing.
+- **Corpus ingestion:** PDF and plain-text extraction, readability triage, optional local vision OCR, paragraph-aware chunks with overlap and page metadata, stable chunk identifiers, and incremental indexing in ChromaDB. Rebuild after changing chunking or embedding settings.
+- **Semantic graph search:** cached node embeddings, exact-name preference, type filtering, duplicate candidates, and an explicit lexical fallback if embeddings are unavailable.
+- **Provenance and grounding:** assertions distinguish `stated`, `confirmed`, `inferred`, and `derived`. Passage nodes link claims back to corpus chunks; the model's interpretation of a passage remains an inference.
+- **Temporal tracking:** first-asserted dates, revision history, retirement records, and change queries. Older undated assertions retain a pre-temporal marker rather than an invented date.
+- **Conversation controls:** save an exchange or only the user's words, inspect changes, and reset the conversation. Graph update reports are assembled from actual tool results.
+- **Runtime controls:** configuration lives in `config.py`; the model client checks the server's context allocation, trims old tool results, and attempts to continue truncated answers.
 
-1. **Corpus ingestion.** Feed Calliope your actual writing — journals, essays, notes — alongside the texts that have shaped you: philosophy, literature, science, criticism, and media (it can process images). This corpus is the raw material of your actual intellectual life.
-
-2. **Vectorisation and RAG.** Chunk and embed the corpus into a vector database. When Calliope asserts an edge, it queries the corpus for passages that support the claim — retrieving the actual text (or image, or source) that grounds the relationship.
-
-3. **Reified edge grounding.** Instead of `grounding: "Sean has said he finds restraint aesthetically necessary"`, an edge could carry `grounding: "Journal entry, March 2024: 'The version without the third paragraph is the one.'"` — a direct citation from primary material.
-
-This changes the epistemological status of the graph significantly. Edges stop being Calliope's inferences about you and become claims anchored in your actual expressed thought. The graph becomes not just a model of your worldview but an **evidence-based record** of it — one that can be interrogated, audited, and revised with reference to the source material.
-
-It also enables a different kind of conversation. When Calliope finds a tension, it could surface the passages from your own writing where that tension shows up — not as illustration but as evidence. The conversation becomes a dialogue with your own archive.
+The dated architecture illustration in `Calliope/calliope_architecture.html` is retained as an earlier reference. The modules and this README describe the current implementation.
 
 ---
 
 ## Setup
 
-**Requirements:**
-- Python 3.9+
-- [LM Studio](https://lmstudio.ai/) running locally with the server enabled
-- A model loaded in LM Studio (default: `google/gemma-4-12b-qat`)
+Requirements: Python 3.10+, [LM Studio](https://lmstudio.ai/) with its local server enabled, a chat model supporting tool calls, and Nomic Embed Text v1.5 for semantic search and corpus ingestion.
+
+From the repository root:
 
 ```bash
-pip install openai networkx
-```
-
-**Configure** `main.py` if your model name differs:
-```python
-MODEL = "google/gemma-4-12b-qat"  # change to whatever you have loaded
-LM_STUDIO_URL = "http://localhost:1234/v1"
-```
-
-**Run:**
-```bash
+python3 -m pip install -r requirements.txt
+cd Calliope
 python3 main.py
 ```
 
-**Commands in the REPL:**
-- Type anything to talk to Calliope
-- `graph` — inspect the current graph (node counts by type)
-- `exit` — quit
+The defaults are `google/gemma-4-12b-qat` for chat, `text-embedding-nomic-embed-text-v1.5` for embeddings, and `http://localhost:1234/v1` for LM Studio. Use the identifiers served by your installation:
+
+```bash
+CALLIOPE_MODEL="your-loaded-model" python3 main.py
+CALLIOPE_EMBED_MODEL="your-embedding-model" python3 main.py
+CALLIOPE_CONTEXT=32651 CALLIOPE_DEBUG=1 python3 main.py
+```
+
+Set `CALLIOPE_CONTEXT` to match the context allocated in LM Studio. Other configuration includes `CALLIOPE_LM_URL`, `CALLIOPE_RERANK_MODEL`, and `CALLIOPE_ABS_BASELINE`. If the optional reranker cannot load, retrieval reports the fallback.
+
+### Build your corpus
+
+Create these directories under `Calliope/` as needed:
+
+| Directory | Content |
+|---|---|
+| `corpus/` | Source PDFs |
+| `corpus_text/` | Published works as `.txt` or `.md` |
+| `corpus_sean/` | The owner's writing as `.txt` or `.md` (the directory name is currently fixed in code) |
+| `corpus_dialogue/` | Saved user/model exchanges, indexed separately from original writing |
+
+With LM Studio serving the embedding model, run from `Calliope/`:
+
+```bash
+python3 ingest.py --no-ocr
+python3 ingest.py --report
+python3 corpus.py --calibrate
+python3 graph_search.py --calibrate
+```
+
+Omit `--no-ocr` to enable vision OCR for unreadable PDF pages; this also needs the vision model configured in `ingest.py`. `python3 ingest.py --rebuild` recreates the collection from the source files. Check `SOURCE_METADATA` in `ingest.py` when adding texts so citations carry accurate authors and titles.
+
+The public repository contains an example graph. Personal graphs, source texts, saved conversations, indexes, caches, and calibration files are not included in this update. Keep your personal graph outside Git tracking: `.gitignore` cannot hide changes to the already tracked example at `Calliope/data/graph.json`.
+
+### Terminal commands
+
+| Command | Action |
+|---|---|
+| `graph` | Inspect graph nodes and counts |
+| `corpus <query>` | Search the corpus with retrieval diagnostics |
+| `keep` | Save the latest complete exchange to the dialogue corpus |
+| `keep me` | Save only the user's latest turn to the owner's writing corpus |
+| `changed` / `changed since YYYY-MM-DD` | Inspect graph changes |
+| `reset` | Clear conversation history |
+| `exit` | Quit |
+
+Run ingestion again after saving exchanges to make them searchable.
+
+### Review graph weights
+
+From `Calliope/`, use `python3 weights.py --export`, edit the generated `weights_todo.yaml`, then run `python3 weights.py --apply`. `python3 weights.py --status` reports completion.
+
+### Verification
+
+These tests run without LM Studio; semantic search uses deterministic embedding stubs:
+
+```bash
+cd Calliope
+python3 test_graph_nodes.py
+python3 test_graph_temporal.py
+python3 test_graph_search.py
+```
+
+They cover node safeguards, history and provenance, passage grounding, graph search ranking and filtering, cache invalidation, and lexical fallback. They do not establish live model or retrieval quality.
 
 ---
 
 ## Project structure
 
-```
-calliope/
-├── main.py          # Entry point, ReAct loop, CLI REPL
-├── graph.py         # CalliopeGraph class — all graph operations
-├── tools.py         # Tool definitions (OpenAI function calling format) + execution
-├── loop.py          # System prompt, continuation logic, REQUIRED_TOOLS enforcement
-└── data/
-    └── graph.json   # The ontology graph (replace with your own)
-```
+| File | Responsibility |
+|---|---|
+| `Calliope/main.py` | CLI, tool loop, conversation commands |
+| `Calliope/config.py` | Model endpoint, context and tool budgets |
+| `Calliope/model_io.py` | Model calls, streaming, continuation, context checks |
+| `Calliope/graph_report.py` | Reports verified graph changes |
+| `Calliope/loop.py` | System prompt and protocol requirements |
+| `Calliope/tools.py` | Tool schemas and dispatch |
+| `Calliope/graph.py` | NetworkX graph, persistence, provenance, history |
+| `Calliope/graph_search.py` | Semantic graph search and embedding cache |
+| `Calliope/embeddings.py` | Shared embedding client and task prefixes |
+| `Calliope/corpus.py` | Hybrid corpus retrieval and calibration |
+| `Calliope/ingest.py` | PDF/text extraction, chunking, indexing |
+| `Calliope/weights.py` | Export and apply weight reviews |
+| `Calliope/data/graph.json` | Public example graph; replace locally for personal use |
 
 ---
 
@@ -183,3 +243,4 @@ Calliope is the muse of epic poetry in Greek mythology — the patron of long-fo
 ## License
 
 MIT
+
