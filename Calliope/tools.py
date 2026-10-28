@@ -301,6 +301,14 @@ TOOL_DEFINITIONS = [
                         "type": "integer",
                         "description": "Number of passages to return (default 5, max 10)",
                     },
+                    "strict_diversity": {
+                        "type": "boolean",
+                        "description": (
+                            "Keep at most two passages per source, even if fewer "
+                            "than n_results can be returned. Default false preserves "
+                            "the existing soft cap and sparse-result fallback."
+                        ),
+                    },
                     "provenance": {
                         "type": "string",
                         "description": (
@@ -524,6 +532,7 @@ def execute_tool(graph: CalliopeGraph, tool_name: str, args: dict) -> str:
                 args["query"],
                 n_results=args.get("n_results", 5),
                 where=where or None,
+                strict_diversity=args.get("strict_diversity", False),
             )
 
         elif tool_name == "assert_node":
@@ -568,3 +577,4 @@ def execute_tool(graph: CalliopeGraph, tool_name: str, args: dict) -> str:
         result = {"error": str(e)}
 
     return json.dumps(result, indent=2)
+
