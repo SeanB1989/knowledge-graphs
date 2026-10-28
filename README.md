@@ -181,6 +181,14 @@ Omit `--no-ocr` to enable vision OCR for unreadable PDF pages; this also needs t
 
 The public repository contains an example graph. Personal graphs, source texts, saved conversations, indexes, caches, and calibration files are not included in this update. Keep your personal graph outside Git tracking: `.gitignore` cannot hide changes to the already tracked example at `Calliope/data/graph.json`.
 
+### Strict source diversity
+
+The `search_corpus` tool accepts an optional `strict_diversity` boolean. When true,
+retrieval returns at most two passages from each source and never relaxes that cap
+to fill the requested result count. It may therefore return fewer passages.
+The default remains false, retaining the existing soft diversity cap and fallback.
+Metadata filters, relevance thresholds, and stable citation identifiers are unchanged.
+
 ### Terminal commands
 
 | Command | Action |
@@ -243,4 +251,5 @@ Calliope is the muse of epic poetry in Greek mythology — the patron of long-fo
 ## License
 
 MIT
+
 

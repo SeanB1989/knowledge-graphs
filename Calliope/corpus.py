@@ -450,7 +450,7 @@ def _matches_where(meta: dict, where: dict) -> bool:
 
 
 def search_corpus(query: str, n_results: int = 5, where: dict | None = None,
-                  include_weak: bool = False) -> dict:
+                  include_weak: bool = False, strict_diversity: bool = False) -> dict:
     """
     Run the full three-stage retrieval pipeline.
 
@@ -459,6 +459,7 @@ def search_corpus(query: str, n_results: int = 5, where: dict | None = None,
 
     where: optional metadata filter, e.g. {"provenance": "sean"} or
            {"author": "Mark Fisher"}.
+    strict_diversity: keep the per-source cap even when this returns fewer hits.
     """
     _load()
     n_results = max(1, min(int(n_results), 10))
@@ -489,6 +490,7 @@ def search_corpus(query: str, n_results: int = 5, where: dict | None = None,
                 "dense_hits": 0, "sparse_hits": 0, "fused_candidates": 0,
                 "corpus_chunks": len(_docs), "scoring": "n/a",
                 "filter": where or None, "reranker_note": None,
+                "strict_diversity": strict_diversity,
             },
         }
 
@@ -536,14 +538,14 @@ def search_corpus(query: str, n_results: int = 5, where: dict | None = None,
         if score < floor:
             continue
         src = _metas[i].get("source", "?")
-        if per_source[src] >= MAX_PER_SOURCE:
+        if per_source[src] > MAX_PER_SOURCE:
             continue
         per_source[src] += 1
         kept.append((i, score))
 
     # If the diversity cap starved the result set, relax it -- but never drop
     # below the hard FLOOR, which is what makes "nothing relevant" possible.
-    if len(kept) < min(2, n_results):
+    if not strict_diversity and len(kept) < min(2, n_results):
         chosen = {i for i, _ in kept}
         for i, score in scored:
             if len(kept) >= n_results:
@@ -606,6 +608,7 @@ def search_corpus(query: str, n_results: int = 5, where: dict | None = None,
             "sparse_hits": len(sparse_order),
             "fused_candidates": len(candidates),
             "filter": where or None,
+            "strict_diversity": strict_diversity,
             "similarity_baseline": round(dist["median"], 3),
             "similarity_p90": round(dist["p90"], 3),
             "reranker_note": _rerank_unavailable_reason or None,
@@ -630,7 +633,8 @@ def _clip(text: str, limit: int) -> str:
 
 
 def format_for_tool(query: str, n_results: int = 5, where: dict | None = None,
-                    char_budget: int = DEFAULT_CHAR_BUDGET) -> str:
+                    char_budget: int = DEFAULT_CHAR_BUDGET,
+                    strict_diversity: bool = False) -> str:
     """
     JSON string for use as a tool result in Calliope's loop, guaranteed to fit
     in char_budget and guaranteed to still be valid JSON.
@@ -893,3 +897,4 @@ if __name__ == "__main__":
         print(f"    relevance {r['relevance']} ({r['confidence']}), "
               f"cosine {r['similarity']}, found by {r['found_by']}")
         print(f"    {r['text'][:260]}...\n")
+
